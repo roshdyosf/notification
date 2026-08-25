@@ -29,5 +29,5 @@ func (a *App) loadNotificationRoutes(router chi.Router) {
 	notifHandler := handler.NewNotificationHandler(repo)
 	router.Post("/", notifHandler.Create)
 	router.Get("/", notifHandler.List)
-	router.Get("/{id}", notifHandler.MarkAsRead)
+	router.Get("/{id}", notifHandler.Read)
 }

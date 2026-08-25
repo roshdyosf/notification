@@ -85,7 +85,7 @@ if err := json.NewEncoder(w).Encode(map[string]interface{}{
 	}
 }
 
-func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
+func (h *NotificationHandler) Read(w http.ResponseWriter,r *http.Request){
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "Notification ID is required", http.StatusBadRequest)
@@ -101,7 +101,7 @@ func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
 		http.Error(w, "Failed to mark notification as read: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
