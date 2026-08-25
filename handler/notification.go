@@ -19,12 +19,12 @@ func NewNotificationHandler(repo repository.NotificationRepository) *Notificatio
 	return &NotificationHandler{repo: repo}
 }
 
-
 type CreateNotificationRequest struct {
 	UserID  string `json:"user_id"`
 	Type    string `json:"type"`
 	Message string `json:"message"`
 }
+
 var allowedNotificationTypes = map[string]bool{
 	"EMAIL": true,
 	"SMS":   true,
@@ -34,6 +34,7 @@ var allowedNotificationTypes = map[string]bool{
 func isValidNotificationType(nType string) bool {
 	return allowedNotificationTypes[nType]
 }
+
 func (h *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
 	var req CreateNotificationRequest
 
@@ -57,7 +58,6 @@ func (h *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
 			Message: req.Message,
 		}
 
-
 	if err := h.repo.Create(r.Context(), notif); err != nil {
 			http.Error(w, "Failed to save notification: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -70,11 +70,11 @@ func (h *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
 			"data":    notif,
 		})
 
-
 }
 
 
 func (h *NotificationHandler) List(w http.ResponseWriter, r *http.Request) {
+	
 userID := r.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
@@ -96,7 +96,7 @@ userID := r.URL.Query().Get("user_id")
 	unreadOnly := r.URL.Query().Get("unread_only") == "true"
 
 	notifications, total, err := h.repo.ListByUserID(r.Context(),userID,limit,offset,unreadOnly)
-	
+
 	if err != nil {
 		http.Error(w, "Failed to fetch notifications: "+err.Error(), http.StatusInternalServerError)
 		return
