@@ -24,39 +24,50 @@ type CreateNotificationRequest struct {
 	Type    string `json:"type"`
 	Message string `json:"message"`
 }
+var allowedNotificationTypes = map[string]bool{
+	"EMAIL": true,
+	"SMS":   true,
+	"PUSH":  true,
+}
 
+func isValidNotificationType(nType string) bool {
+	return allowedNotificationTypes[nType]
+}
 func (h *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
-var req CreateNotificationRequest
+	var req CreateNotificationRequest
 
 
-//validation first
-if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-if req.UserID == "" || req.Type == "" || req.Message == "" {
-		http.Error(w, "user_id, type, and message are required", http.StatusUnprocessableEntity)
-		return
-	}
+	//validation first
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			return
+		}
+	if req.UserID == "" || req.Type == "" || req.Message == "" {
+			http.Error(w, "user_id, type, and message are required", http.StatusUnprocessableEntity)
+			return
+		}
+	if !isValidNotificationType(req.Type) {
+			http.Error(w, "Invalid notification type. Allowed types: EMAIL, SMS, PUSH", http.StatusBadRequest)
+			return
+		}
+	notif := &model.Notification{
+			UserID:  req.UserID,
+			Type:    req.Type,
+			Message: req.Message,
+		}
 
-notif := &model.Notification{
-		UserID:  req.UserID,
-		Type:    req.Type,
-		Message: req.Message,
-	}
 
+	if err := h.repo.Create(r.Context(), notif); err != nil {
+			http.Error(w, "Failed to save notification: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-if err := h.repo.Create(r.Context(), notif); err != nil {
-		http.Error(w, "Failed to save notification: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Notification created successfully",
-		"data":    notif,
-	})
+	w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Notification created successfully",
+			"data":    notif,
+		})
 
 
 }

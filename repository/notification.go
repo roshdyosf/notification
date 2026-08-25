@@ -23,6 +23,8 @@ func NewPostgresNotificationRepo(db *sql.DB) NotificationRepository {
 }
 
 
+
+
 func (r *postgresNotificationRepo) Create(ctx context.Context, notif *model.Notification) error {
 	query := `
 		INSERT INTO notifications (user_id, type, message, status, is_read, retry_count, created_at, updated_at)
