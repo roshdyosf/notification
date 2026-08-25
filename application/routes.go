@@ -8,7 +8,7 @@ import (
 	"github.com/roshdyosf/notificationSys/handler"
 )
 
-func loadRoutes() *chi.Mux{
+func (a *App)loadRoutes() *chi.Mux{
 	
 	router:= chi.NewRouter()
 
@@ -19,14 +19,15 @@ func loadRoutes() *chi.Mux{
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Route("/notification",loadNotificationRoutes)
+	router.Route("/notification",a.loadNotificationRoutes)
 return router
 }
-func loadNotificationRoutes(router chi.Router){
+
+func (a *App) loadNotificationRoutes(router chi.Router) {
 	
-notificationHandler := &handler.Notification{}
-router.Post("/",notificationHandler.Create)
-router.Get("/",notificationHandler.List)
-router.Get("/{id}",notificationHandler.GetById)
+notifHandler:=handler.NewNotificationHandler(a.db)
+router.Post("/",notifHandler.Create)
+router.Get("/",notifHandler.List)
+router.Get("/{id}",notifHandler.MarkAsRead)
 }
 

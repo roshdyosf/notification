@@ -1,20 +1,27 @@
 package handler
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 )
 
-type Notification struct{}
+type NotificationHandler struct{
+	DB *sql.DB
+}
 
-func (n *Notification) Create(w http.ResponseWriter,r *http.Request){
+func NewNotificationHandler(db *sql.DB) *NotificationHandler {
+	return &NotificationHandler{DB: db}
+}
+
+func (n *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
 fmt.Println("Create notification")
 
 }
-func (n *Notification) List(w http.ResponseWriter,r *http.Request){
+func (n *NotificationHandler) List(w http.ResponseWriter,r *http.Request){
 	fmt.Println("List notification")
 }
-func (n *Notification) GetById(w http.ResponseWriter,r *http.Request){
+func (n *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
 	fmt.Println("touch notification")
 }
 
