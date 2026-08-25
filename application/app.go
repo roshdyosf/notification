@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/roshdyosf/notificationSys/database"
 )
@@ -39,22 +40,37 @@ func (a *App) Start(ctx context.Context)error{
 	if port == "" {
 		port = "4000" 
 	}
-	Server:= &http.Server{
+	server:= &http.Server{
 		Addr:  ":" + port,
 		Handler: a.router,
 	}
 
-	defer a.db.Close()
 
+	serverError := make(chan error, 1)
+	go func() {
+		log.Printf("Server starting on port %s...", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			serverError <- err
+		}
+	}()
 
-	err :=Server.ListenAndServe()
+	select {
+	case err := <-serverError:
+		return fmt.Errorf("server error: %w", err)
 
-	if err != nil {
+	case <-ctx.Done():
+		log.Println("Shutting down gracefully...")
 
-		return fmt.Errorf("failed to start the server: %w",err)
+		defer a.db.Close()
 
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("forced shutdown: %w", err)
+		}
+
+		log.Println("Server stopped cleanly.")
+		return nil
 	}
-
-
-	return nil
 }

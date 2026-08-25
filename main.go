@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/roshdyosf/notificationSys/application"
 )
@@ -12,12 +13,10 @@ import (
 func main() {
 	app := application.New()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	defer cancel()
-
-	err := app.Start(ctx)
-	if err != nil {
-		fmt.Println("failed to start app: ", err)
+	if err := app.Start(ctx); err != nil {
+		fmt.Println("Error running app:", err)
 	}
 }
