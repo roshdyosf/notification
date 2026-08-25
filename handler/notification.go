@@ -59,10 +59,31 @@ w.Header().Set("Content-Type", "application/json")
 
 
 }
-func (h *NotificationHandler) List(w http.ResponseWriter,r *http.Request){
-	fmt.Println("List notification")
+
+
+func (h *NotificationHandler) List(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	notifications, err := h.repo.ListByUserID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch notifications: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	
+if err := json.NewEncoder(w).Encode(map[string]interface{}{
+		"data": notifications,
+	}); err != nil {
+		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
+	}
 }
+
 func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
 	fmt.Println("touch notification")
 }
-

@@ -10,6 +10,8 @@ import (
 
 type NotificationRepository interface {
 	Create(ctx context.Context, notif *model.Notification) error
+	ListByUserID(ctx context.Context,userID string)([]model.Notification,error)
+	MarkAsRead(ctx context.Context, id string) error
 }
 
 type postgresNotificationRepo struct {
@@ -43,3 +45,54 @@ func (r *postgresNotificationRepo) Create(ctx context.Context, notif *model.Noti
 		&notif.UpdatedAt,
 	)
 }
+
+
+func(r *postgresNotificationRepo) ListByUserID(ctx context.Context , userID string)([]model.Notification, error){
+
+query := `
+		SELECT id, user_id, type, message, status, is_read, retry_count, created_at, updated_at
+		FROM notifications
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err !=nil{
+		return nil,err
+	}
+
+defer rows.Close()
+
+notifications := []model.Notification{}
+
+
+for rows.Next() {
+		var n model.Notification
+		err := rows.Scan(
+			&n.ID,
+			&n.UserID,
+			&n.Type,
+			&n.Message,
+			&n.Status,
+			&n.IsRead,
+			&n.RetryCount,
+			&n.CreatedAt,
+			&n.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		notifications = append(notifications, n)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notifications, nil
+
+
+
+
+
+}
+
