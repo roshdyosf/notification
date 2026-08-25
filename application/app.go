@@ -35,24 +35,26 @@ return app
 }
 
 func (a *App) Start(ctx context.Context)error{
-port := os.Getenv("PORT")
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "4000" 
 	}
-Server:= &http.Server{
-	Addr:  ":" + port,
-	Handler: a.router,
-}
+	Server:= &http.Server{
+		Addr:  ":" + port,
+		Handler: a.router,
+	}
 
-defer a.db.Close()
+	defer a.db.Close()
 
 
-err :=Server.ListenAndServe()
+	err :=Server.ListenAndServe()
 
-if err != nil {
+	if err != nil {
 
-	return fmt.Errorf("failed to start the server: %w",err)
+		return fmt.Errorf("failed to start the server: %w",err)
 
-}
-return nil
+	}
+
+
+	return nil
 }
