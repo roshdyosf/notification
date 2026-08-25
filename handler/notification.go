@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/roshdyosf/notificationSys/model"
 	"github.com/roshdyosf/notificationSys/repository"
 )
@@ -76,7 +77,7 @@ func (h *NotificationHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	
+
 if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"data": notifications,
 	}); err != nil {
@@ -85,5 +86,26 @@ if err := json.NewEncoder(w).Encode(map[string]interface{}{
 }
 
 func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
-	fmt.Println("touch notification")
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Notification ID is required", http.StatusBadRequest)
+		return
+	}
+
+	notif, err := h.repo.MarkAsRead(r.Context(), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Notification not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to mark notification as read: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Notification retrieved and marked as read successfully",
+		"data":    notif,
+	})
 }
