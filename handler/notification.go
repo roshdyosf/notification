@@ -1,27 +1,68 @@
 package handler
 
 import (
-	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/roshdyosf/notificationSys/model"
+	"github.com/roshdyosf/notificationSys/repository"
 )
 
-type NotificationHandler struct{
-	DB *sql.DB
+type NotificationHandler struct {
+	repo repository.NotificationRepository
 }
 
-func NewNotificationHandler(db *sql.DB) *NotificationHandler {
-	return &NotificationHandler{DB: db}
+func NewNotificationHandler(repo repository.NotificationRepository) *NotificationHandler {
+	return &NotificationHandler{repo: repo}
 }
 
-func (n *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
-fmt.Println("Create notification")
+
+type CreateNotificationRequest struct {
+	UserID  string `json:"user_id"`
+	Type    string `json:"type"`
+	Message string `json:"message"`
+}
+
+func (h *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
+var req CreateNotificationRequest
+
+
+//validation first
+if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+if req.UserID == "" || req.Type == "" || req.Message == "" {
+		http.Error(w, "user_id, type, and message are required", http.StatusUnprocessableEntity)
+		return
+	}
+
+notif := &model.Notification{
+		UserID:  req.UserID,
+		Type:    req.Type,
+		Message: req.Message,
+	}
+
+
+if err := h.repo.Create(r.Context(), notif); err != nil {
+		http.Error(w, "Failed to save notification: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Notification created successfully",
+		"data":    notif,
+	})
+
 
 }
-func (n *NotificationHandler) List(w http.ResponseWriter,r *http.Request){
+func (h *NotificationHandler) List(w http.ResponseWriter,r *http.Request){
 	fmt.Println("List notification")
 }
-func (n *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
+func (h *NotificationHandler) MarkAsRead(w http.ResponseWriter,r *http.Request){
 	fmt.Println("touch notification")
 }
 

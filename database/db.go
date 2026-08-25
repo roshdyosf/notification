@@ -34,8 +34,28 @@ func ConnectDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Println("Database connection established successfully!")
+	if err := createTables(db); err != nil {
+		return nil, fmt.Errorf("failed to create tables: %w", err)
+	}
+	log.Println("Database connection established & tables verified!")
 	return db, nil
 
 }
 
+func createTables(db *sql.DB) error {
+	query := `
+	CREATE TABLE IF NOT EXISTS notifications (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		user_id VARCHAR(255) NOT NULL,
+		type VARCHAR(100) NOT NULL,
+		message TEXT NOT NULL,
+		status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+		is_read BOOLEAN NOT NULL DEFAULT false,
+		retry_count INT NOT NULL DEFAULT 0,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);
+	`
+	_, err := db.Exec(query)
+	return err
+}
