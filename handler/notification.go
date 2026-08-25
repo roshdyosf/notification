@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/roshdyosf/notificationSys/model"
@@ -74,26 +75,44 @@ func (h *NotificationHandler) Create(w http.ResponseWriter,r *http.Request){
 
 
 func (h *NotificationHandler) List(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
+userID := r.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
 		return
 	}
 
-	notifications, err := h.repo.ListByUserID(r.Context(), userID)
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page <= 0 {
+		page = 1
+	}
+
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	unreadOnly := r.URL.Query().Get("unread_only") == "true"
+
+	notifications, total, err := h.repo.ListByUserID(r.Context(),userID,limit,offset,unreadOnly)
+	
 	if err != nil {
 		http.Error(w, "Failed to fetch notifications: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-if err := json.NewEncoder(w).Encode(map[string]interface{}{
-		"data": notifications,
-	}); err != nil {
-		http.Error(w, "Failed to encode response: "+err.Error(), http.StatusInternalServerError)
-	}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"data": notifications,
+			"meta": map[string]interface{}{
+				"total_items": total,
+				"page":        page,
+				"limit":       limit,
+				"total_pages": (total + limit - 1) / limit,
+			},
+		})
 }
 
 func (h *NotificationHandler) Read(w http.ResponseWriter,r *http.Request){

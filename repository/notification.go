@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/roshdyosf/notificationSys/model"
 )
@@ -10,7 +11,7 @@ import (
 
 type NotificationRepository interface {
 	Create(ctx context.Context, notif *model.Notification) error
-	ListByUserID(ctx context.Context,userID string)([]model.Notification,error)
+	ListByUserID(ctx context.Context, userID string, limit, offset int, unreadOnly bool)([]model.Notification, int, error)
 	MarkAsRead(ctx context.Context, id string) (*model.Notification, error)
 }
 
@@ -49,25 +50,37 @@ func (r *postgresNotificationRepo) Create(ctx context.Context, notif *model.Noti
 }
 
 
-func(r *postgresNotificationRepo) ListByUserID(ctx context.Context , userID string)([]model.Notification, error){
+func (r *postgresNotificationRepo) ListByUserID(ctx context.Context, userID string, limit, offset int, unreadOnly bool) ([]model.Notification, int, error) {
+	baseQuery := `FROM notifications WHERE user_id = $1`
+	args := []interface{}{userID}
+	paramIdx := 2
 
-query := `
-		SELECT id, user_id, type, message, status, is_read, retry_count, created_at, updated_at
-		FROM notifications
-		WHERE user_id = $1
-		ORDER BY created_at DESC
-	`
-	rows, err := r.db.QueryContext(ctx, query, userID)
-	if err !=nil{
-		return nil,err
+	if unreadOnly {
+		baseQuery += " AND is_read = false"
 	}
 
-defer rows.Close()
+	var total int
+	countQuery := "SELECT COUNT(*) " + baseQuery
+	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
 
-notifications := []model.Notification{}
+	dataQuery := fmt.Sprintf("SELECT id, user_id, type, message, status, is_read, retry_count, created_at, updated_at %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d",
+		baseQuery, paramIdx, paramIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, dataQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	defer rows.Close()
+
+	notifications := []model.Notification{}
 
 
-for rows.Next() {
+	for rows.Next() {
 		var n model.Notification
 		err := rows.Scan(
 			&n.ID,
@@ -81,18 +94,20 @@ for rows.Next() {
 			&n.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		notifications = append(notifications, n)
-	}
+		}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return notifications, nil
+	return notifications, total, nil
 
 }
+
+
 func (r *postgresNotificationRepo) MarkAsRead(ctx context.Context,id string)(*model.Notification, error ){
 	query := `
 			UPDATE notifications
