@@ -9,7 +9,7 @@ import (
 	"github.com/roshdyosf/notificationSys/repository"
 )
 
-func (a *App)loadRoutes() *chi.Mux{
+func (a *App)loadRoutes(repo repository.NotificationRepository ) *chi.Mux{
 	
 	router:= chi.NewRouter()
 
@@ -20,12 +20,14 @@ func (a *App)loadRoutes() *chi.Mux{
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Route("/notification",a.loadNotificationRoutes)
+	router.Route("/notification",func(r chi.Router) {
+		a.loadNotificationRoutes(r, repo)
+	})
 return router
 }
 
-func (a *App) loadNotificationRoutes(router chi.Router) {
-	repo := repository.NewPostgresNotificationRepo(a.db)
+func (a *App) loadNotificationRoutes(router chi.Router,repo repository.NotificationRepository) {
+
 	notifHandler := handler.NewNotificationHandler(repo)
 	router.Post("/", notifHandler.Create)
 	router.Get("/", notifHandler.List)

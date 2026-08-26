@@ -10,11 +10,15 @@ import (
 	"time"
 
 	"github.com/roshdyosf/notificationSys/database"
+	"github.com/roshdyosf/notificationSys/pkg/provider"
+	"github.com/roshdyosf/notificationSys/repository"
+	"github.com/roshdyosf/notificationSys/worker"
 )
 
 type App struct {
 	router http.Handler
 	db *sql.DB
+	worker *worker.Worker
 }
 
 
@@ -25,13 +29,21 @@ func New()*App{
 		log.Fatalf("Database connection failed: %v", err )
 	}
 
+
+	repo := repository.NewPostgresNotificationRepo(db)
+	emailProv := provider.NewMockEmailProvider()
+
+
+	notifWorker := worker.NewWorker(repo, emailProv)
+
 	app:= &App{
 
 		db:db,
+		worker: notifWorker,
 		
 	}
-	app.router= app.loadRoutes()
-return app
+	app.router = app.loadRoutes(repo)
+	return app
 
 }
 
@@ -44,7 +56,7 @@ func (a *App) Start(ctx context.Context)error{
 		Addr:  ":" + port,
 		Handler: a.router,
 	}
-
+	go a.worker.Start(ctx)
 
 	serverError := make(chan error, 1)
 	go func() {
