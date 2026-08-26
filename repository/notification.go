@@ -13,6 +13,9 @@ type NotificationRepository interface {
 	Create(ctx context.Context, notif *model.Notification) error
 	ListByUserID(ctx context.Context, userID string, limit, offset int, unreadOnly bool)([]model.Notification, int, error)
 	MarkAsRead(ctx context.Context, id string) (*model.Notification, error)
+	FetchPending(ctx context.Context, limit int) ([]model.Notification, error)
+	UpdateStatus(ctx context.Context, id string, status string) error
+	UpdateRetry(ctx context.Context, id string, retryCount int, status string) error
 }
 
 type postgresNotificationRepo struct {

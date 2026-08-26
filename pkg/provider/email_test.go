@@ -10,9 +10,9 @@ func TestMockEmailProvider(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		err := provider.Send("Test notification message")
 		if err != nil {
-			t.Logf("Attempt %d: ❌ Failed with error: %v", i, err)
+			t.Logf("Attempt %d:  Failed with error: %v", i, err)
 		} else {
-			t.Logf("Attempt %d: ✅ Sent successfully", i)
+			t.Logf("Attempt %d:  Sent successfully", i)
 		}
 	}
 }
