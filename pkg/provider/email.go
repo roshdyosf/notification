@@ -7,7 +7,7 @@ import (
 )
 
 type EmailProvider interface {
-	Send(message string) error
+	Send(email string, message string) error
 }
 
 type mockEmailProvider struct{}
@@ -16,7 +16,7 @@ func NewMockEmailProvider() EmailProvider {
 	return &mockEmailProvider{}
 }
 
-func (m *mockEmailProvider) Send(message string) error {
+func (m *mockEmailProvider) Send(email string,message string) error {
 	time.Sleep(500 * time.Millisecond)
 
 	if rand.Float32() < 0.3 {

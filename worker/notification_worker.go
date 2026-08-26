@@ -43,12 +43,13 @@ func (w *Worker) Start(ctx context.Context) {
 
 func (w *Worker) processNotifications(ctx context.Context) {
 	notifications, err := w.repo.FetchPending(ctx, 10)
-	if err != nil {
+	if err != nil  {
 		log.Printf("[Worker Error] Failed to fetch pending notifications: %v", err)
 		return
 	}
 
 	if len(notifications) == 0 {
+				log.Printf("there is no pending notifications")
 		return
 	}
 
@@ -62,7 +63,7 @@ func (w *Worker) processNotifications(ctx context.Context) {
 
 		var sendErr error
 		if notif.Type == "EMAIL" {
-			sendErr = w.emailProvider.Send(notif.Message)
+			sendErr = w.emailProvider.Send("mockemailfornow@mock.com",notif.Message)
 		}
 
 		if sendErr == nil {
