@@ -20,7 +20,7 @@ func (a *App)loadRoutes(repo repository.NotificationRepository ) *chi.Mux{
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Route("/notification",func(r chi.Router) {
+	router.Route("/api/v1/notifications",func(r chi.Router) {
 		a.loadNotificationRoutes(r, repo)
 	})
 return router

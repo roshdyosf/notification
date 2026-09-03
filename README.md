@@ -130,17 +130,17 @@ go run .
 
 ### Notification Management
 
-| Method | Route                                         | Description                                  |
-| ------ | --------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------ |
-| `POST` | `/notification`                               | Create a new notification                    |
-| `GET`  | `/notification?user_id={id}&unread_only={true | false}`                                      | List notifications for a user with pagination and unread filtering |
-| `GET`  | `/notification/{id}`                          | Get a notification by ID and mark it as read |
+| Method | Route                                                 | Description                                  |
+| ------ | ----------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------ |
+| `POST` | `/api/v1/notifications`                               | Create a new notification                    |
+| `GET`  | `/api/v1/notifications?user_id={id}&unread_only={true | false}`                                      | List notifications for a user with pagination and unread filtering |
+| `GET`  | `/api/v1/notifications/{id}`                          | Get a notification by ID and mark it as read |
 
 ### Request and Query Details
 
 #### Create Notification
 
-`POST /notification`
+`POST /api/v1/notifications`
 
 Request body:
 
@@ -160,7 +160,7 @@ Allowed notification types:
 
 #### List Notifications
 
-`GET /notification?user_id={id}&unread_only={true|false}`
+`GET /api/v1/notifications?user_id={id}&unread_only={true|false}`
 
 Supported query parameters:
 
@@ -172,12 +172,12 @@ Supported query parameters:
 Example:
 
 ```bash
-curl "http://localhost:4000/notification?user_id=user-123&unread_only=true&page=1&limit=10"
+curl "http://localhost:4000/api/v1/notifications?user_id=user-123&unread_only=true&page=1&limit=10"
 ```
 
 #### Get Single Notification
 
-`GET /notification/{id}`
+`GET /api/v1/notifications/{id}`
 
 This endpoint fetches the notification by ID and sets `is_read` to `true` in the database.
 
@@ -201,5 +201,3 @@ The worker is implemented in the `worker` package, while the provider abstractio
 - The app automatically creates the `notifications` table on startup if it does not already exist.
 - The background worker is a lightweight polling worker and uses a simple retry model suited for local development and service orchestration.
 - The service is intentionally structured to separate concerns for easier extension with actual email/SMS/push integrations.
-
-
